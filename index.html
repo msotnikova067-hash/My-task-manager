@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Офлайн-планировщик задач, расписания и напоминаний.">
+  <meta name="theme-color" content="#b52f42">
+  <link rel="manifest" href="manifest.webmanifest?v=2">
+  <title>Менеджер задач</title>
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <!-- Видео-фон включается только после выбора пользователем и всегда воспроизводится без звука. -->
+  <video id="backgroundVideo" class="background-video" muted loop playsinline aria-hidden="true"></video>
+  <main class="app-shell">
+    <header class="app-header">
+      <div class="brand" aria-label="Менеджер задач">
+        <span class="brand-mark" aria-hidden="true">✓</span>
+        <div>
+          <p class="eyebrow">Личный планировщик</p>
+          <h1>Менеджер задач</h1>
+        </div>
+      </div>
+      <p class="header-note">Задачи, смены, учёба и важные планы — в одном месте.</p>
+    </header>
+
+    <!-- Краткая сводка на текущий день -->
+    <section class="today-dashboard" aria-labelledby="todayTitle">
+      <div class="dashboard-heading">
+        <div>
+          <p class="eyebrow">Главное на сегодня</p>
+          <h2 id="todayTitle"><span id="todayDate"></span></h2>
+        </div>
+        <button id="enableNotifications" class="notification-button" type="button">Включить уведомления</button>
+      </div>
+      <div class="overview-grid">
+        <article class="overview-card overview-current">
+          <span class="overview-icon" aria-hidden="true">◷</span>
+          <p>Сейчас</p>
+          <strong id="currentSchedule">Нет активного занятия</strong>
+          <span id="currentScheduleDetail">Можно заняться личными делами.</span>
+        </article>
+        <article class="overview-card overview-next">
+          <span class="overview-icon" aria-hidden="true">→</span>
+          <p>Далее</p>
+          <strong id="nextSchedule">План свободен</strong>
+          <span id="nextScheduleDetail">Добавьте блок в график.</span>
+        </article>
+        <article class="overview-card overview-task">
+          <span class="overview-icon" aria-hidden="true">✦</span>
+          <p>Ближайшая задача</p>
+          <strong id="focusTask">Нет задач со сроком</strong>
+          <span id="focusTaskDetail">Запланируйте важное на удобное время.</span>
+        </article>
+      </div>
+      <p id="notificationStatus" class="notification-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="create-panel" aria-labelledby="createTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Новая запись</p>
+          <h2 id="createTitle">Добавить задачу</h2>
+        </div>
+        <span class="section-badge" aria-hidden="true">+</span>
+      </div>
+
+      <form id="taskForm" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="taskTitle">Название <span aria-hidden="true">*</span></label>
+            <input id="taskTitle" name="title" type="text" placeholder="Например, подготовить презентацию" autocomplete="off" maxlength="140" required aria-describedby="createError">
+          </div>
+          <div class="field">
+            <label for="taskDescription">Описание <span class="optional">необязательно</span></label>
+            <textarea id="taskDescription" name="description" rows="2" placeholder="Добавьте детали, чтобы ничего не упустить" maxlength="500"></textarea>
+          </div>
+        </div>
+
+        <div class="task-options-grid">
+          <div class="field">
+            <label for="taskCategory">Категория</label>
+            <select id="taskCategory" name="category">
+              <option value="work">Работа</option>
+              <option value="study">Учёба</option>
+              <option value="personal">Личное</option>
+              <option value="home">Дом</option>
+              <option value="important">Важно</option>
+              <option value="other">Другое</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="taskPriority">Приоритет</label>
+            <select id="taskPriority" name="priority">
+              <option value="low">Низкий</option>
+              <option value="normal" selected>Обычный</option>
+              <option value="high">Высокий</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="taskDueAt">Срок выполнения <span class="optional">необязательно</span></label>
+            <input id="taskDueAt" name="dueAt" type="datetime-local">
+          </div>
+          <div class="field">
+            <label for="taskRecurrence">Повторение</label>
+            <select id="taskRecurrence" name="recurrence">
+              <option value="none">Не повторять</option>
+              <option value="daily">Каждый день</option>
+              <option value="weekdays">По будням</option>
+              <option value="weekly">Каждую неделю</option>
+              <option value="monthly">Каждый месяц</option>
+            </select>
+          </div>
+        </div>
+
+        <p id="createError" class="form-error" role="alert" aria-live="assertive"></p>
+        <div class="form-actions"><button class="button button-primary" type="submit"><span aria-hidden="true">+</span> Добавить задачу</button></div>
+      </form>
+    </section>
+
+    <section class="appearance-panel" aria-labelledby="appearanceTitle">
+      <details id="appearanceSettings">
+        <summary>
+          <span class="appearance-summary-icon" aria-hidden="true">✦</span>
+          <span><span class="eyebrow">Персонализация</span><strong id="appearanceTitle">Оформление приложения</strong></span>
+          <span class="summary-chevron" aria-hidden="true">⌄</span>
+        </summary>
+        <div class="appearance-content">
+          <div class="appearance-grid">
+            <div class="appearance-control">
+              <label for="accentColor">Цвет кнопок и акцентов</label>
+              <p>Выберите готовый цвет или задайте свой.</p>
+              <div class="theme-swatches" aria-label="Готовые цвета оформления">
+                <button class="theme-swatch theme-violet" type="button" data-theme-color="#b52f42" aria-label="Бордовый цвет"></button>
+                <button class="theme-swatch theme-blue" type="button" data-theme-color="#3487f3" aria-label="Синий цвет"></button>
+                <button class="theme-swatch theme-teal" type="button" data-theme-color="#16ae99" aria-label="Бирюзовый цвет"></button>
+                <button class="theme-swatch theme-green" type="button" data-theme-color="#48a657" aria-label="Зелёный цвет"></button>
+                <button class="theme-swatch theme-orange" type="button" data-theme-color="#f18b3c" aria-label="Оранжевый цвет"></button>
+                <button class="theme-swatch theme-pink" type="button" data-theme-color="#e86388" aria-label="Розовый цвет"></button>
+              </div>
+              <div class="native-color-row">
+                <input id="accentColor" type="color" value="#b52f42" aria-label="Свой цвет кнопок">
+                <label for="accentColor" class="color-value-label">Свой цвет: <output id="accentColorValue">#B52F42</output></label>
+              </div>
+            </div>
+            <div class="appearance-control">
+              <label for="backgroundUpload">Фон: изображение или видео</label>
+              <p>Фото JPG, PNG, WebP или короткое видео MP4/WebM. Файл сохраняется только на этом устройстве.</p>
+              <input id="backgroundUpload" class="file-input" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+              <p id="backgroundStatus" class="background-status" role="status" aria-live="polite">Фон не выбран.</p>
+            </div>
+          </div>
+          <div class="appearance-actions">
+            <button id="clearBackground" class="button button-secondary" type="button" disabled>Удалить фон</button>
+            <button id="resetAppearance" class="button button-text" type="button">Сбросить оформление</button>
+          </div>
+          <p class="appearance-note">Изображение автоматически сжимается перед сохранением для устойчивой офлайн-работы.</p>
+        </div>
+      </details>
+    </section>
+
+    <div class="workspace-grid">
+      <section class="tasks-panel" aria-labelledby="tasksTitle">
+        <div class="tasks-toolbar">
+          <div>
+            <p class="eyebrow">Мои дела</p>
+            <h2 id="tasksTitle">Задачи</h2>
+            <p id="taskStats" class="task-stats" aria-live="polite">Всего: 0 · Выполнено: 0</p>
+          </div>
+          <div class="filters" role="group" aria-label="Фильтр задач">
+            <button class="filter-button is-active" type="button" data-filter="all" aria-pressed="true">Все</button>
+            <button class="filter-button" type="button" data-filter="active" aria-pressed="false">Активные</button>
+            <button class="filter-button" type="button" data-filter="completed" aria-pressed="false">Выполненные</button>
+          </div>
+        </div>
+        <div id="emptyState" class="empty-state" hidden>
+          <span class="empty-icon" aria-hidden="true">☼</span>
+          <h3 id="emptyTitle">У вас пока нет задач</h3>
+          <p id="emptyText">Добавьте первую — и начните двигаться к цели.</p>
+        </div>
+        <div id="taskList" class="task-list" aria-label="Список задач"></div>
+      </section>
+
+      <section class="schedule-panel" aria-labelledby="scheduleTitle">
+        <div class="schedule-heading">
+          <div>
+            <p class="eyebrow">Планирование</p>
+            <h2 id="scheduleTitle">График работы</h2>
+          </div>
+          <span class="calendar-icon" aria-hidden="true">▦</span>
+        </div>
+        <p class="schedule-intro">Выберите режим, затем нажмите на дату. Внизу можно вести график по часам и напоминания.</p>
+        <div class="schedule-types" role="group" aria-label="Тип рабочего дня">
+          <button class="schedule-select is-selected" type="button" data-schedule-type="select" aria-pressed="true">Выбрать дату</button>
+          <button class="schedule-type" type="button" data-schedule-type="work" aria-pressed="false"><span class="type-dot type-work" aria-hidden="true"></span>Рабочий день</button>
+          <button class="schedule-type" type="button" data-schedule-type="study" aria-pressed="false"><span class="type-dot type-study" aria-hidden="true"></span>Учёба</button>
+          <button class="schedule-type" type="button" data-schedule-type="off" aria-pressed="false"><span class="type-dot type-off" aria-hidden="true"></span>Выходной</button>
+          <button class="schedule-type" type="button" data-schedule-type="personal" aria-pressed="false"><span class="type-dot type-personal" aria-hidden="true"></span>Личное</button>
+          <button class="schedule-clear" type="button" data-schedule-type="clear" aria-pressed="false">Стереть метку</button>
+        </div>
+
+        <div class="calendar-nav">
+          <button id="previousMonth" class="calendar-nav-button" type="button" aria-label="Предыдущий месяц">‹</button>
+          <h3 id="calendarMonth" aria-live="polite"></h3>
+          <button id="nextMonth" class="calendar-nav-button" type="button" aria-label="Следующий месяц">›</button>
+        </div>
+        <div class="calendar-weekdays" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+        <div id="calendarGrid" class="calendar-grid" aria-label="Календарь рабочего графика"></div>
+        <p id="scheduleStatus" class="schedule-status" role="status" aria-live="polite"></p>
+
+        <section class="week-timeline" aria-labelledby="weekTimelineTitle">
+          <div class="week-timeline-heading">
+            <button id="previousWeek" class="calendar-nav-button" type="button" aria-label="Предыдущая неделя">‹</button>
+            <div><p class="eyebrow">Неделя</p><h3 id="weekTimelineTitle"><span id="weekLabel"></span></h3></div>
+            <button id="nextWeek" class="calendar-nav-button" type="button" aria-label="Следующая неделя">›</button>
+          </div>
+          <div id="weekTimeline" class="week-timeline-grid" aria-label="Недельная шкала занятий"></div>
+        </section>
+
+        <section class="day-planner" aria-labelledby="dayPlannerTitle">
+          <div class="day-planner-heading">
+            <div><p class="eyebrow">Выбранный день</p><h3 id="dayPlannerTitle"><span id="selectedScheduleDate"></span></h3></div>
+            <span class="day-planner-icon" aria-hidden="true">◷</span>
+          </div>
+
+          <form id="timeBlockForm" class="planner-form" novalidate>
+            <div class="planner-form-header"><h4>График по часам</h4><p>Например: работа с 08:00 до 14:00.</p></div>
+            <div class="time-fields">
+              <label>Занятие<select id="timeBlockType" name="type"><option value="work">Рабочий день</option><option value="study">Учёба</option><option value="off">Выходной</option><option value="personal">Личное</option></select></label>
+              <label>Начало<input id="timeBlockStart" name="start" type="time" value="08:00" required></label>
+              <label>Конец<input id="timeBlockEnd" name="end" type="time" value="14:00" required></label>
+            </div>
+            <p id="timeBlockError" class="planner-error" role="alert" aria-live="assertive"></p>
+            <div class="planner-form-actions"><button id="saveTimeBlock" class="planner-add-button" type="submit">Добавить блок</button><button id="cancelTimeEdit" class="planner-cancel-button" type="button" hidden>Отмена</button></div>
+          </form>
+
+          <form id="repeatScheduleForm" class="planner-form repeat-form" novalidate>
+            <div class="planner-form-header"><h4>Повторить график</h4><p>Копирует занятия выбранного дня.</p></div>
+            <div class="repeat-fields">
+              <label>Повторять<select id="repeatMode"><option value="daily">Каждый день</option><option value="weekdays">По будням</option><option value="weekly">Каждую неделю</option></select></label>
+              <label>Сколько раз<input id="repeatCount" type="number" value="5" min="1" max="60" inputmode="numeric"></label>
+            </div>
+            <p id="repeatError" class="planner-error" role="alert" aria-live="assertive"></p>
+            <div class="planner-form-actions"><button class="planner-add-button" type="submit">Создать повторения</button></div>
+          </form>
+
+          <form id="reminderForm" class="planner-form reminder-form" novalidate>
+            <div class="planner-form-header"><h4>Напоминание</h4><p>Будет видно на выбранной дате.</p></div>
+            <label class="reminder-title-label" for="reminderTitle">Текст напоминания</label>
+            <div class="reminder-fields"><input id="reminderTitle" name="title" type="text" maxlength="120" placeholder="Например, позвонить преподавателю" required aria-describedby="reminderError"><input id="reminderTime" name="time" type="time" value="09:00" aria-label="Время напоминания"></div>
+            <p id="reminderError" class="planner-error" role="alert" aria-live="assertive"></p>
+            <div class="planner-form-actions"><button class="planner-add-button" type="submit">Добавить напоминание</button></div>
+          </form>
+
+          <div class="day-lists">
+            <div class="day-list-section"><h4>Занятия</h4><div id="timeBlocksList" class="planner-items" aria-live="polite"></div></div>
+            <div class="day-list-section"><h4>Напоминания</h4><div id="remindersList" class="planner-items" aria-live="polite"></div></div>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <!-- Диалог редактирования задачи -->
+  <dialog id="editDialog" class="modal" aria-labelledby="editDialogTitle">
+    <div class="modal-heading"><div><p class="eyebrow">Изменение записи</p><h2 id="editDialogTitle">Редактировать задачу</h2></div><button class="icon-button" type="button" data-close-edit aria-label="Закрыть окно редактирования">×</button></div>
+    <form id="editTaskForm" novalidate>
+      <div class="field"><label for="editTitle">Название <span aria-hidden="true">*</span></label><input id="editTitle" name="title" type="text" maxlength="140" required aria-describedby="editError"></div>
+      <div class="field"><label for="editDescription">Описание <span class="optional">необязательно</span></label><textarea id="editDescription" name="description" rows="4" maxlength="500"></textarea></div>
+      <div class="task-options-grid edit-task-options">
+        <div class="field"><label for="editCategory">Категория</label><select id="editCategory"><option value="work">Работа</option><option value="study">Учёба</option><option value="personal">Личное</option><option value="home">Дом</option><option value="important">Важно</option><option value="other">Другое</option></select></div>
+        <div class="field"><label for="editPriority">Приоритет</label><select id="editPriority"><option value="low">Низкий</option><option value="normal">Обычный</option><option value="high">Высокий</option></select></div>
+        <div class="field"><label for="editDueAt">Срок выполнения</label><input id="editDueAt" type="datetime-local"></div>
+        <div class="field"><label for="editRecurrence">Повторение</label><select id="editRecurrence"><option value="none">Не повторять</option><option value="daily">Каждый день</option><option value="weekdays">По будням</option><option value="weekly">Каждую неделю</option><option value="monthly">Каждый месяц</option></select></div>
+      </div>
+      <p id="editError" class="form-error" role="alert" aria-live="assertive"></p>
+      <div class="modal-actions"><button class="button button-secondary" type="button" data-close-edit>Отмена</button><button class="button button-primary" type="submit">Сохранить</button></div>
+    </form>
+  </dialog>
+
+  <!-- Диалог удаления -->
+  <dialog id="deleteDialog" class="modal modal-confirm" aria-labelledby="deleteDialogTitle">
+    <div class="modal-heading"><div><p class="eyebrow">Осторожно</p><h2 id="deleteDialogTitle">Удалить задачу?</h2></div><button class="icon-button" type="button" data-close-delete aria-label="Закрыть окно подтверждения">×</button></div>
+    <p class="confirm-text">Задача будет удалена без возможности восстановления.</p>
+    <div class="modal-actions"><button class="button button-secondary" type="button" data-close-delete>Отмена</button><button id="confirmDelete" class="button button-danger" type="button">Удалить</button></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  <script src="script.js?v=2"></script>
+</body>
+</html>
